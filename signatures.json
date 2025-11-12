@@ -1,0 +1,102 @@
+[
+  {
+    "id": "RULE_TCP_SYN_FLOOD",
+    "description": "Detect potential SYN flood (many SYNs without ACKs) per src IP",
+    "enabled": true,
+    "priority": 10,
+    "severity": "high",
+    "match": {
+      "all": [
+        { "protocol": "TCP" },
+        { "tcp_flags": { "syn": true, "ack": false } }
+      ]
+    },
+    "stateful": {
+      "key_by": ["src_ip"],
+      "window": 60,
+      "threshold": 500,
+      "compare": ">",
+      "unit": "packets",
+      "suppress_for": 300
+    },
+    "action": "block",
+    "tags": ["dos","syn-flood"],
+    "dry_run": false
+  },
+
+  {
+    "id": "RULE_SSH_BRUTE_FORCE",
+    "description": "SSH brute force: many distinct connection attempts to port 22 within 5 minutes",
+    "enabled": true,
+    "priority": 20,
+    "severity": "medium",
+    "match": {
+      "all": [
+        { "protocol": "TCP" },
+        { "port": { "dst": 22 } }
+      ]
+    },
+    "stateful": {
+      "key_by": ["src_ip"],
+      "window": 300,
+      "threshold": 50,
+      "compare": ">",
+      "unit": "flows",
+      "suppress_for": 600
+    },
+    "action": "alert",
+    "tags": ["ssh","bruteforce"],
+    "dry_run": false
+  },
+
+  {
+    "id": "RULE_HTTP_BAD_UA",
+    "description": "HTTP requests from scanner UA",
+    "enabled": true,
+    "priority": 50,
+    "severity": "low",
+    "match": {
+      "all": [
+        { "protocol": "TCP" },
+        { "http": { "header": "User-Agent", "regex": "BadScanner|Curl/.*lib" } }
+      ]
+    },
+    "action": "alert",
+    "tags": ["http","scanner"],
+    "dry_run": true
+  },
+
+  {
+    "id": "RULE_PAYLOAD_HEUR_MALWARE",
+    "description": "Payload contains common malware marker bytes",
+    "enabled": true,
+    "priority": 30,
+    "severity": "critical",
+    "match": {
+      "any": [
+        { "payload_contains": "malware-signature" },
+        { "payload_bytes": { "hex": "4d5a9000" } }
+      ]
+    },
+    "action": "block",
+    "tags": ["malware","file"],
+    "expires_at": "2026-01-01T00:00:00Z"
+  },
+
+  {
+    "id": "RULE_LARGE_UDP_PACKET",
+    "description": "Unusually large UDP packet (could be amplification)",
+    "enabled": true,
+    "priority": 40,
+    "severity": "medium",
+    "match": {
+      "all": [
+        { "protocol": "UDP" },
+        { "length": { "gt": 1200 } }
+      ]
+    },
+    "action": "alert",
+    "tags": ["udp","amplification"],
+    "dry_run": false
+  }
+]
